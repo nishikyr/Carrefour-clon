@@ -1,0 +1,12 @@
+.registro-container {
+    max-width: 500px; /* Controla el ancho del formulario */
+    margin: 40px auto; /* Lo centra horizontalmente */
+    padding: 20px;
+    background: white;
+}
+
+@media (max-width: 768px) {
+    .registro-container {
+        max-width: 90%;
+    }
+}
