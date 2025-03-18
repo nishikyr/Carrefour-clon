@@ -1,12 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import MiniNavbarRegistro from "./mini-navbarRegistroComponent/mini-navbarRegistro";
 import MiniFooterRegistro from "./mini-footerRegistroComponent/mini-footerRegistro";
 import "./Registro.css";
+import restClienteService from "../../../services/restClienteService";
 
 
 function Registro(){
+
+    const [showPassword1, setShowPassword1] = useState(false);
+    const [showPassword2, setShowPassword2] = useState(false);
+    const [formularioValido, setFormularioValido] = useState(false);
     
+    
+    //===== TODOS LOS DATOS DEL FORMULARIO MAPEADOS ...
     const [formData, setFormData]=useState(
         {
             nombre:{
@@ -78,6 +85,15 @@ function Registro(){
                 },
                 mensajeValidacion:''
             },
+            password2:{
+                valor:'', 
+                valido: false,
+                validaciones: { 
+                    obligatorio: [true, '* Debes repetir la contraseña'],
+                    coincidir: ['password', '* Las contraseñas no coinciden']
+                },
+                mensajeValidacion:''
+            },
             postalCode:{
                 valor: '',
                 valido: false,
@@ -88,80 +104,123 @@ function Registro(){
                 },
                 mensajeValidacion: ''
             }
-
         }
     );
 
     function ManejarSubmitForm(ev){
         ev.preventDefault();
         console.log("Pasa por esta funcion!!!!!")
+        console.log(formData);
+        restClienteService.RegistrarDatosCliente(
+            {
+                nombre: formData.nombre.valor,
+                apellidos: formData.apellidos.valor,
+                telefono: formData.telefono.valor,
+                tipoDocumento: formData.tipoDocumento.valor,
+                numeroDocumento: formData.numeroDocumento.valor,
+                email: formData.email.valor,
+                password: formData.password.valor,
+                //password2: formData.password.valor,
+                codigo: formData.postalCode.valor || null  
+                //Como esto es opcional puede llegar vacio entonces lo paso a null para guardarlo en mi mongoDB
+            }
+        )
     }
 
     function ValidarCajasHandler(ev){
+        console.log("Se ha perdido el foco de la caja con el valor ...", ev.target.name, ev.target.value);
         let _validacionesAHacer=formData[ev.target.name].validaciones;
         let _valido = false;
         let _errorMensaje='';
 
-        for(const vali of Object.keys(_validacionesAHacer)){
-            switch(vali){
+        for(const validacion of Object.keys(_validacionesAHacer)){
+            switch(validacion){
                 case 'obligatorio':
                     _valido = ev.target.value.trim() !== '' ? true: false;
                     break;
 
                 case 'maximaLongitud':
-                    _valido = ev.target.value.trim() !== '' && ev.target.value.length < _validacionesAHacer[vali][0] ? true : false;
+                    _valido = ev.target.value.trim() !== '' && ev.target.value.length < _validacionesAHacer[validacion][0] ? true : false;
                     break;
 
                 case 'minimaLongitud':
-                    _valido=ev.target.value.trim() !== '' && ev.target.value.length >= _validacionesAHacer[vali][0] ? true : false;                                
+                    _valido=ev.target.value.trim() !== '' && ev.target.value.length >= _validacionesAHacer[validacion][0] ? true : false;                                
                     break;
 
                 case 'patron':
-                    _valido=new RegExp(_validacionesAHacer[vali][0]).test(ev.target.value) ? true : false;                        
+                    _valido=new RegExp(_validacionesAHacer[validacion][0]).test(ev.target.value) ? true : false;                        
                     break;
                 
                 case 'longitudExacta':
-                    _valido=ev.target.value.trim() !== '' && ev.target.value.length == _validacionesAHacer[vali][0] ? true : false;
+                    _valido=ev.target.value.trim() !== '' && ev.target.value.length == _validacionesAHacer[validacion][0] ? true : false;
                     break;
                 
                 case 'opcionesValidas':
-                    _valido=ev.target.value == _validacionesAHacer[vali][0][0] ||
-                            ev.target.value == _validacionesAHacer[vali][0][1] ||
-                            ev.target.value == _validacionesAHacer[vali][0][2] ? true : false;
-                    break;
-
-                case 'formatoNIE':
-                    _valido=new RegExp(_validacionesAHacer[vali][0]).test(ev.target.value) ? true : false;                        
+                    _valido=ev.target.value == _validacionesAHacer[validacion][0][0] ||
+                            ev.target.value == _validacionesAHacer[validacion][0][1] ||
+                            ev.target.value == _validacionesAHacer[validacion][0][2] ? true : false;
                     break;
 
                 case 'formatoDNI':
-                    _valido=new RegExp(_validacionesAHacer[vali][0]).test(ev.target.value) ? true : false;                        
-                    break;
-
+                    if (formData.tipoDocumento.valor !== 'DNI'){
+                        break;
+                    } 
+                    _valido = new RegExp(_validacionesAHacer[validacion][0]).test(ev.target.value);
+                    if (!_valido) _errorMensaje = _validacionesAHacer[validacion][1];
+                    break; // 💡 Detiene la ejecución aquí si es DNI
+        
+                case 'formatoNIE':
+                    if (formData.tipoDocumento.valor !== 'NIE') break;
+                    _valido = new RegExp(_validacionesAHacer[validacion][0]).test(ev.target.value);
+                    if (!_valido) _errorMensaje = _validacionesAHacer[validacion][1];
+                    break; // 💡 Detiene la ejecución aquí si es NIE
+                        
                 case 'formatoPasaporte':
-                    _valido=new RegExp(_validacionesAHacer[vali][0]).test(ev.target.value) ? true : false;                        
+                    if (formData.tipoDocumento.valor !== 'Pasaporte') break;
+                    _valido = new RegExp(_validacionesAHacer[validacion][0]).test(ev.target.value);
+                    if (!_valido) _errorMensaje = _validacionesAHacer[validacion][1];
+                    break; // 💡 Detiene la ejecución aquí si es Pasaporte
+
+
+                case 'coincidir':
+                    _valido = ev.target.value === formData[_validacionesAHacer[validacion][0]].valor ? true : false;
                     break;
 
                 default:
                     break;
             };
-            if (! _valido) { _errorMensaje= _validacionesAHacer[vali][1]; break; }
-        }
-        setFormData(
-            {
-                ...formData,
-                [ev.target.name]: {
-                                    ...formData[ev.target.name],
-                                    valido: _valido,
-                                    mensajeValidacion: _errorMensaje
-                                }
+            if (! _valido) { 
+                _errorMensaje= _validacionesAHacer[validacion][1]; 
+                break; 
             }
-        )
+        }
+
+        setFormData((prevFormData) => {
+            const nuevoFormData = {
+                ...prevFormData,
+                [ev.target.name]: {
+                    ...prevFormData[ev.target.name],
+                    valido: _valido,
+                    mensajeValidacion: _errorMensaje
+                }
+            };
+        
+            // Verifica si TODOS los campos son válidos y actualiza formularioValido
+            let camposValidos = true;
+            for(let campo in nuevoFormData){
+                if (campo === 'postalCode' && !nuevoFormData[campo].valor) continue;
+                if(!nuevoFormData[campo].valido){
+                    camposValidos = false;
+                    break;
+                }
+            }
+            setFormularioValido(camposValidos);
+        
+            return nuevoFormData;
+        });
+        
     }
-
-    const [showPassword1, setShowPassword1] = useState(false);
-    const [showPassword2, setShowPassword2] = useState(false);
-
+    
     return (
         <>
         <MiniNavbarRegistro />
@@ -212,8 +271,9 @@ function Registro(){
                     <div className="form-floating flex-grow-1 me-2">
                         <select className="form-select rounded-3" 
                                 id="documentoTipo" 
-                                name="documentoTipo"
-                                
+                                name="tipoDocumento"
+                                value={formData.tipoDocumento.valor}
+                                onChange={(ev) => setFormData({...formData, tipoDocumento:{...formData.tipoDocumento, valor: ev.target.value}})}
                         >
                             <option value="DNI">DNI</option>
                             <option value="NIE">NIE</option>
@@ -222,12 +282,30 @@ function Registro(){
                         <label htmlFor="documentoTipo">Tipo de documento*</label>
                     </div>
                     <div className="form-floating flex-grow-1">
-                        <input type="text" className="form-control rounded-3" id="documentoNumero" name="documentoNumero" placeholder="12345679A*" required />
+                    <input 
+                        type="text" 
+                        className="form-control rounded-3" 
+                        id="numeroDocumento" 
+                        name="numeroDocumento" 
+                        placeholder="Número de documento*" 
+                        required 
+                        onChange={ (ev)=> setFormData( {...formData, numeroDocumento:{ ...formData.numeroDocumento, valor: ev.target.value } } ) }
+                        onBlur={ValidarCajasHandler}
+                    />
+                        { ! formData.numeroDocumento.valido && <span className='text-danger text-start d-block'>{formData.numeroDocumento.mensajeValidacion}</span> }
                         <label htmlFor="documentoNumero">Número de documento*</label>
                     </div>
                 </div>
                 <div className="form-floating mb-3">
-                    <input type="email" className="form-control rounded-3" id="email" name="email" placeholder="Correo electrónico*" required />
+                    <input type="email" 
+                            className="form-control rounded-3" 
+                            id="email" 
+                            name="email" 
+                            placeholder="Correo electrónico*" required 
+                            onChange={ (ev)=> setFormData( {...formData, email:{ ...formData.email, valor: ev.target.value } } ) }
+                            onBlur={ValidarCajasHandler}
+                    />
+                    { ! formData.email.valido && <span className='text-danger text-start d-block'>{formData.email.mensajeValidacion}</span> }
                     <label htmlFor="email">Correo electrónico*</label>
                 </div>
                 <div className="form-floating mb-3 position-relative">
@@ -236,9 +314,11 @@ function Registro(){
                         className="form-control rounded-3"
                         id="password"
                         name="password"
-                        placeholder="Contraseña*"
-                        required
+                        placeholder="Contraseña*" required
+                        onChange={(ev) => setFormData({...formData, password: {...formData.password, valor: ev.target.value } } ) }
+                        onBlur={ValidarCajasHandler}
                     />
+                    { !formData.password.valido && <span className='text-danger text-start d-block'>{formData.password.mensajeValidacion}</span> }
                     <label htmlFor="password">Contraseña*</label>
                     <span
                         className="position-absolute end-0 top-50 translate-middle-y me-3"
@@ -255,9 +335,11 @@ function Registro(){
                         className="form-control rounded-3"
                         id="password2"
                         name="password2"
-                        placeholder="Repite la Contraseña*"
-                        required
+                        placeholder="Repite la Contraseña*" required
+                        onChange={(ev) => setFormData({...formData, password2: {...formData.password2, valor: ev.target.value } } ) }
+                        onBlur={ValidarCajasHandler}
                     />
+                    { !formData.password2.valido && <span className='text-danger text-start d-block'>{formData.password2.mensajeValidacion}</span> }
                     <label htmlFor="password2">Repite la Contraseña*</label>
                     <span
                         className="position-absolute end-0 top-50 translate-middle-y me-3"
@@ -268,10 +350,21 @@ function Registro(){
                     </span>
                 </div>
                 <div className="form-floating mb-3">
-                    <input type="text" className="form-control rounded-3" id="postalCode" name="postalCode" placeholder="Código postal (opcional)" />
+                    <input type="text" 
+                            className="form-control rounded-3" 
+                            id="postalCode" 
+                            name="postalCode" 
+                            placeholder="Código postal (opcional)" 
+                            onChange={(ev) => setFormData({...formData, postalCode: {...formData.postalCode, valor: ev.target.value } } ) }
+                            onBlur={ValidarCajasHandler}
+                    />
                     <label htmlFor="postalCode">Código postal (opcional)</label>
                 </div>
-                <button type="submit" className="btn btn-primary w-100 py-3 fs-5 rounded-3">Crear cuenta</button>
+                <button 
+                    type="submit" 
+                    className="btn btn-primary w-100 py-3 fs-5 rounded-3"
+                    disabled={!formularioValido}
+                    >Crear cuenta</button>
             </form>
             <div className="text-center mt-3">
                 <p>¿Ya tienes una cuenta? <a href="#" className="text-primary">Iniciar sesión</a></p>
@@ -280,7 +373,7 @@ function Registro(){
                 </small>
             </div>
         </div>
-        
+
         <MiniFooterRegistro />
         </>
 
