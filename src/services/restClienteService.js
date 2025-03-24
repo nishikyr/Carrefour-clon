@@ -25,7 +25,7 @@ export default{
             return _respuesta.json().codigo === 0;
 
         } catch (error) {
-            console.log('Erro al registrar el usuario', error)
+            console.log('Error al registrar el usuario', error)
             return false;
         }
     }
