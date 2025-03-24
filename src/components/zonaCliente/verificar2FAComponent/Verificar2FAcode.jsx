@@ -3,10 +3,9 @@ import { useParams} from 'react-router-dom'
 
 const Verficar2FAcode=()=>{
 
-    const { operacion }=useParams();
+    const { operacion }=useParams();  //<-------devuelve un objeto con este formato: {nombre_parametro: valor, nombre_parametro:valor, ... } en nuestro caso: { operacion: 'Registro' | 'Login'}
 
     return (
-
             <div className="container">
                 <div className="row m-2">
                     <div className="col-md-2"></div>
