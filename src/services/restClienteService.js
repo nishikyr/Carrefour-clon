@@ -2,7 +2,7 @@ export default{
     ComprobarEmail: async function(email){
         try {
             const _respuesta = await fetch('http://localhost:3003/api/zonaCliente/ComprobarEmail', {
-                method: POST,
+                method: "POST",
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({email})
             });
@@ -18,14 +18,16 @@ export default{
     RegistrarDatosCliente: async function(datosFormRegistro){
         try {
             const _respuesta = await fetch('http://localhost:3003/api/zonaCliente/Registro', {
-                method: POST,
+                method: "POST",
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({datosFormRegistro})
             });
-            return _respuesta.json().codigo === 0;
+
+            const data = await _respuesta.json();
+            return data;
 
         } catch (error) {
-            console.log('Error al registrar el usuario', error)
+            console.log('Error al registrar el usuario!!!!!', error)
             return false;
         }
     }

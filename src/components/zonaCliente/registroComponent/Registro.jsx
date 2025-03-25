@@ -4,13 +4,14 @@ import MiniNavbarRegistro from "./mini-navbarRegistroComponent/mini-navbarRegist
 import MiniFooterRegistro from "./mini-footerRegistroComponent/mini-footerRegistro";
 import "./Registro.css";
 import restClienteService from "../../../services/restClienteService";
-
+import { useNavigate } from "react-router-dom";
 
 function Registro(){
 
     const [showPassword1, setShowPassword1] = useState(false);
     const [showPassword2, setShowPassword2] = useState(false);
     const [formularioValido, setFormularioValido] = useState(false);
+    const navigate = useNavigate();
     
     
     //===== TODOS LOS DATOS DEL FORMULARIO MAPEADOS ...
@@ -109,8 +110,10 @@ function Registro(){
 
     function ManejarSubmitForm(ev){
         ev.preventDefault();
+
         console.log("Pasa por esta funcion!!!!!")
         console.log(formData);
+
         restClienteService.RegistrarDatosCliente(
             {
                 nombre: formData.nombre.valor,
@@ -120,11 +123,24 @@ function Registro(){
                 numeroDocumento: formData.numeroDocumento.valor,
                 email: formData.email.valor,
                 password: formData.password.valor,
-                //password2: formData.password.valor,
-                codigo: formData.postalCode.valor || null  
+                codigo: formData.postalCode.valor
                 //Como esto es opcional puede llegar vacio entonces lo paso a null para guardarlo en mi mongoDB
             }
-        )
+        ).then(response => {
+            if(response.codigo === 0 ){
+                localStorage.setItem('jwtVerificacion', response.datos.jwtVerificacion);
+                localStorage.setItem('emailRegistro', formData.email.valor);
+
+                //Esto me va redigir a la página de comprobación 
+                navigate('/Cliente/Verificar/Registro');
+            }else{
+                console.log('paso bien pero hubo errores!!!!!!!!!!! :(')
+            }
+        }).catch(error => {
+            console.log('Error al registrar el usuario: ', error);
+        })
+
+        
     }
 
     function ValidarCajasHandler(ev){
