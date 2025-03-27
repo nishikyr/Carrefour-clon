@@ -2,66 +2,65 @@ import { useEffect, useState } from 'react';
 import './Verficar2FAcode.css'
 import { useParams} from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import useGlobalStore from '../../../globalState/storeGlobal';
 
 const Verficar2FAcode=()=>{
 
-    const { operacion }=useParams();  //<-------devuelve un objeto con este formato: {nombre_parametro: valor, nombre_parametro:valor, ... } en nuestro caso: { operacion: 'Registro' | 'Login'}
+    const { operacion }=useParams();  //<-------devuelve un objeto con este formato: {nombre_parametro: valor, nombre_parametro:valor, ... } en nuestro caso: { operacion: 'Registro' | 'Login'
 
-    const [emailUsuario, setEmailUsuario] = useState('');
-    // Para colocar el email del usuario
-    useEffect( (ev) => {
-        const email = localStorage.getItem('emailRegistro');
-        setEmailUsuario(email);
-    });
+    // Zustand - estado global
+    const { jwt, datosCliente } = useGlobalStore();
 
     const navigate = useNavigate();
+
+    const [charsCode, setCharsCode] = useState([]); //<--------- array de caracteres de codgio por posicion de cajitas de texto [] [] [] []
+
+    //Para ver si el usuario ha cambiado algo en las casillas ...  
+    const manejarCambioDigito = (ev, pos) => {
+        const nuevoValor = ev.target.value.slice(-1);
+        setCharsCode((prev) => {
+            const copia = [...prev];
+            copia[pos] = nuevoValor;
+            return copia;
+        });
+    }
+    
     //Función para comprobar el código !!!!!!!!!!! al hacer click en el boton
-    const ManejarValidacionCodigo = () => {
-        const codigoIngresado = 
-            [1, 2, 3, 4, 5, 6]
-            .map(i => document.getElementById('code' + i).value)
-            .join('');
-    
-        const jwt = localStorage.getItem('jwtVerificacion');
-        const email = localStorage.getItem('emailRegistro');
-    
-        if (codigoIngresado.length < 6 || codigoIngresado === null) {
-            alert('Debes ingresar los 6 dígitos del código.');
+    async function ValidarCodigo() {
+        console.log('Lo que vale el array del state....', charsCode);
+
+        const codigo = charsCode.join('')
+        console.log(codigo);
+
+        if(codigo.length < 6 || charsCode.includes('')){
+            alert('Debes completar los 6 digitos');
             return;
         }
-    
-        fetch('http://localhost:3003/api/zonaCliente/ActivarCuenta', {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + jwt
-            },
-            body: JSON.stringify(
-                { 
-                    codigo: codigoIngresado,
-                    email: email
-                }
-            )
-        })
-        .then(res => res.json())
-        .then(data => {
+        try{
+            const response = await fetch('http://localhost:3003/api/zonaCliente/ActivarCuenta', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + jwt.verificacion
+                },
+                body: JSON.stringify({
+                    email: datosCliente.cuenta?.email,
+                    codigo: codigo
+                })
+            });
+            const data = await response.json();
+
             if (data.codigo === 0) {
-                alert('Cuenta verificada correctamente. ¡Ya puedes iniciar sesión!');
-                localStorage.removeItem('jwtVerificacion');
-                localStorage.removeItem('emailRegistro');
-                // Redirigir al login si quieres
+                alert(' Cuenta verificada correctamente. ¡Ya puedes iniciar sesión!');
                 navigate('/Cliente/Login');
             } else {
                 alert('Código incorrecto o expirado.');
             }
-        })
-        .catch(err => {
-            console.error('Error al validar el código:', err);
-            alert('Error en la validación del código.');
-        });
+        }catch(error){
+            console.error('Error al validar el código:', error);
+            alert('Error de servidor al verificar el código.');
+        }
     };
-
-
 
 
     return (
@@ -72,8 +71,12 @@ const Verficar2FAcode=()=>{
                         <div className="d-flex flex-column  text-center">
                             <picture><img src="https://www.carrefour.es/nlogin/img/v3/otpMail.svg" style={{"width": "96px", "height": "96px"}}/></picture>
                             <h4 className="text-title">{ operacion == 'Registro' ? 'Revista tu Email':'Confirma tu código' }</h4>
-                            <p>{ operacion=='Registro' ? 'Para verificar tu cuenta introduce el código que te hemos' : 'Por tu seguridad, introduce el código que te hemos' }<br/> enviado a:</p>
-                            <p id="otpSended" className="font-weight-600">{emailUsuario}</p>
+                            <p>
+                                { operacion=='Registro' ? 'Para verificar tu cuenta introduce el código que te hemos' : 'Por tu seguridad, introduce el código que te hemos' }<br/> enviado a:
+                            </p>
+                            <p id="otpSended" className="font-weight-600">
+                                {datosCliente.cuenta?.email}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -89,7 +92,7 @@ const Verficar2FAcode=()=>{
                     <div className="col-md-2"></div>
                     <div className="col-md-6 d-flex flex-row justify-content-center">
                         {
-                            [1,2,3,4,5,6].map( a => 
+                            [1,2,3,4,5,6].map( (a,pos) => 
                                     (
                                     <input type="tel"
                                             id={'code'+ a}  
@@ -100,7 +103,9 @@ const Verficar2FAcode=()=>{
                                             maxLength="1"
                                             placeholder=""
                                             aria-invalid="false"
-                                            key={a}/>
+                                            key={a}
+                                            onChange={(ev) =>  manejarCambioDigito(ev, pos)}
+                                            />
                                         )
                             )
                         }
@@ -118,7 +123,7 @@ const Verficar2FAcode=()=>{
                     <div className="col-md-2"></div>
                     <div className="col-md-6 d-flex flex-column justify-content-center">
                         <button type="button" className="botonReenviar">Reenviar codigo</button>
-                        <button type="button" className="botonValidar" onClick={ManejarValidacionCodigo}>Validar codigo</button>
+                        <button type="button" className="botonValidar" onClick={ValidarCodigo}>Validar codigo</button>
                     </div>
                 </div>
             </div>   

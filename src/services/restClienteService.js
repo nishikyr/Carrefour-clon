@@ -15,20 +15,18 @@ export default{
 
         //Los efectos son para trabajar con operaciones asincronas
     },
-    RegistrarDatosCliente: async function(datosFormRegistro){
+    LoginRegistro: async function(operacion, datosForm){
         try {
-            const _respuesta = await fetch('http://localhost:3003/api/zonaCliente/Registro', {
+            const _respuesta = await fetch(`http://localhost:3003/api/zonaCliente/${operacion}`, {
                 method: "POST",
                 headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({datosFormRegistro})
+                body: JSON.stringify(datosForm)
             });
-
-            const data = await _respuesta.json();
-            return data;
+            return await _respuesta.json(); //.codigo===0
 
         } catch (error) {
             console.log('Error al registrar el usuario!!!!!', error)
-            return false;
+            return null; //false;
         }
     }
 }

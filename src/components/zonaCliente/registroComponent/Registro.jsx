@@ -5,6 +5,7 @@ import MiniFooterRegistro from "./mini-footerRegistroComponent/mini-footerRegist
 import "./Registro.css";
 import restClienteService from "../../../services/restClienteService";
 import { useNavigate } from "react-router-dom";
+import useGlobalStore from "../../../globalState/storeGlobal";
 
 function Registro(){
 
@@ -13,6 +14,12 @@ function Registro(){
     const [formularioValido, setFormularioValido] = useState(false);
     const navigate = useNavigate();
     
+    //State-global desde zustand...
+    //const stateGlobal=useGlobalStore();
+    //ahora personalizado
+    //console.log('objeto del state-global almacenado en zustand...', stateGlobal);
+    const {setJwt, setCodigoVerificacion, setDatosCliente } = useGlobalStore();
+    //-------------------------------------------------------------------
     
     //===== TODOS LOS DATOS DEL FORMULARIO MAPEADOS ...
     const [formData, setFormData]=useState(
@@ -108,38 +115,68 @@ function Registro(){
         }
     );
 
-    function ManejarSubmitForm(ev){
+    async function ManejarSubmitForm(ev){
         ev.preventDefault();
 
         console.log("Pasa por esta funcion!!!!!")
         console.log(formData);
+        //Vamos a transformar esto:
+        const datosParaServer = {
+            nombre: formData.nombre.valor,
+            apellidos: formData.apellidos.valor,
+            telefono: formData.telefono.valor,
+            tipoDocumento: formData.tipoDocumento.valor,
+            numeroDocumento: formData.numeroDocumento.valor,
+            email: formData.email.valor,
+            password: formData.password.valor,
+            cp: formData.postalCode.valor
+        }
 
-        restClienteService.RegistrarDatosCliente(
-            {
-                nombre: formData.nombre.valor,
-                apellidos: formData.apellidos.valor,
-                telefono: formData.telefono.valor,
-                tipoDocumento: formData.tipoDocumento.valor,
-                numeroDocumento: formData.numeroDocumento.valor,
-                email: formData.email.valor,
-                password: formData.password.valor,
-                codigo: formData.postalCode.valor
-                //Como esto es opcional puede llegar vacio entonces lo paso a null para guardarlo en mi mongoDB
-            }
-        ).then(response => {
-            if(response.codigo === 0 ){
-                localStorage.setItem('jwtVerificacion', response.datos.jwtVerificacion);
-                localStorage.setItem('emailRegistro', formData.email.valor);
+        //Como le pones un await aqui, arriba a la funcion le debes cambiar a un async para que se cumpla el patrón async/await
+        const _respRegistro = await restClienteService.LoginRegistro('Registro', datosParaServer);
+        if(_respRegistro.codigo === 0){
+            //Entonces necesito almacenar en STATE-GLOBAL datos del codigo de verificacion, jwt verificacion ...
+            //usamos zustand
+            setCodigoVerificacion(_respRegistro.datos.codigo);
+            setJwt('verificacion', _respRegistro.datos.jwtVerificacion);
+            setDatosCliente({cuenta: {email: _respRegistro.datos.email } } );
+            navigate('/Cliente/Verificar/Registro');
+            
+        }else{
+            //FALLO AL REGISTRAR AL USUARIO.
+        }
 
-                //Esto me va redigir a la página de comprobación 
-                navigate('/Cliente/Verificar/Registro');
-            }else{
-                console.log('paso bien pero hubo errores!!!!!!!!!!! :(')
-            }
-        }).catch(error => {
-            console.log('Error al registrar el usuario: ', error);
-        })
+        ///#region ------------- YO LO HICE ASI, PERO EL PROFE LO HIZO CON OTRA FORMA ----------------------
+        // restClienteService.RegistrarDatosCliente(
+        //     {
+        //         nombre: formData.nombre.valor,
+        //         apellidos: formData.apellidos.valor,
+        //         telefono: formData.telefono.valor,
+        //         tipoDocumento: formData.tipoDocumento.valor,
+        //         numeroDocumento: formData.numeroDocumento.valor,
+        //         email: formData.email.valor,
+        //         password: formData.password.valor,
+        //         codigo: formData.postalCode.valor
+        //         //Como esto es opcional puede llegar vacio entonces lo paso a null para guardarlo en mi mongoDB
+        //     }
+        // ).then(response => {
+        //     if(response.codigo === 0 ){
+        //         localStorage.setItem('jwtVerificacion', response.datos.jwtVerificacion);
+        //         localStorage.setItem('emailRegistro', formData.email.valor);
+        //         //necesito almacenar en STATE-GLOBAL datos del codigo de verificacion, jwt verificacion ....
+        //         //usamos zustand
+        //         setCodigoVerificacion(response.datos.codigo);
+        //         setJwt('verificacion', response.datos.)
 
+        //         //Esto me va redigir a la página de comprobación 
+        //         navigate('/Cliente/Verificar/Registro');
+        //     }else{
+        //         console.log('paso bien pero hubo errores!!!!!!!!!!! :(')
+        //     }
+        // }).catch(error => {
+        //     console.log('Error al registrar el usuario: ', error);
+        // })
+        //#endregion-----------------------------------------------------------------------------------------
         
     }
 
