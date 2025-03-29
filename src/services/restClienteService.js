@@ -28,5 +28,34 @@ export default{
             console.log('Error al registrar el usuario!!!!!', error)
             return null; //false;
         }
+    },
+    ActivarCuenta: async function(datosCliente, jwt, codigo){
+        try{
+            const _respuesta = await fetch('http://localhost:3003/api/zonaCliente/ActivarCuenta', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + jwt.verificacion
+                },
+                body: JSON.stringify({
+                    email: datosCliente.cuenta?.email,
+                    codigo: codigo
+                })
+            });
+            const data = await _respuesta.json();
+
+            if (data.codigo === 0) {
+                //alert(' Cuenta verificada correctamente. ¡Ya puedes iniciar sesión!');
+                console.log('Cuenta verificada correctamente')
+            } else {
+                alert('Código incorrecto o expirado.');
+            }
+            return data;
+
+        }catch(error){
+            console.error('Error al validar el código:', error);
+            alert('Error de servidor al verificar el código.');
+            return {codigo: 1}; //Devuelve algo aunque sea fallo
+        }
     }
 }

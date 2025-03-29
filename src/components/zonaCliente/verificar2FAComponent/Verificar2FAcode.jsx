@@ -3,6 +3,7 @@ import './Verficar2FAcode.css'
 import { useParams} from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import useGlobalStore from '../../../globalState/storeGlobal';
+import restClienteService from '../../../services/restClienteService';
 
 const Verficar2FAcode=()=>{
 
@@ -36,30 +37,40 @@ const Verficar2FAcode=()=>{
             alert('Debes completar los 6 digitos');
             return;
         }
-        try{
-            const response = await fetch('http://localhost:3003/api/zonaCliente/ActivarCuenta', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + jwt.verificacion
-                },
-                body: JSON.stringify({
-                    email: datosCliente.cuenta?.email,
-                    codigo: codigo
-                })
-            });
-            const data = await response.json();
 
-            if (data.codigo === 0) {
-                alert(' Cuenta verificada correctamente. ¡Ya puedes iniciar sesión!');
-                navigate('/Cliente/Login');
-            } else {
-                alert('Código incorrecto o expirado.');
-            }
-        }catch(error){
-            console.error('Error al validar el código:', error);
-            alert('Error de servidor al verificar el código.');
+        const _respuesta = await restClienteService.ActivarCuenta(datosCliente, jwt, codigo);
+
+        if(_respuesta.codigo === 0){
+            navigate('/Cliente/Login');
+        }else{
+            console.log('NO TE HEMOS REDIRIGIDO MAJETE!!!!!!!')
+            return;
         }
+
+        // try{
+        //     const response = await fetch('http://localhost:3003/api/zonaCliente/ActivarCuenta', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //             'Authorization': 'Bearer ' + jwt.verificacion
+        //         },
+        //         body: JSON.stringify({
+        //             email: datosCliente.cuenta?.email,
+        //             codigo: codigo
+        //         })
+        //     });
+        //     const data = await response.json();
+
+        //     if (data.codigo === 0) {
+        //         alert(' Cuenta verificada correctamente. ¡Ya puedes iniciar sesión!');
+        //         navigate('/Cliente/Login');
+        //     } else {
+        //         alert('Código incorrecto o expirado.');
+        //     }
+        // }catch(error){
+        //     console.error('Error al validar el código:', error);
+        //     alert('Error de servidor al verificar el código.');
+        // }
     };
 
 
