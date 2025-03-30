@@ -1,3 +1,5 @@
+import autoRefresh from "./autoRefresh";
+
 export default{
     ComprobarEmail: async function(email){
         try {
@@ -31,26 +33,20 @@ export default{
     },
     ActivarCuenta: async function(datosCliente, jwt, codigo){
         try{
-            const _respuesta = await fetch('http://localhost:3003/api/zonaCliente/ActivarCuenta', {
+            const _respuesta = await autoRefresh.fetchRefreshToken('http://localhost:3003/api/zonaCliente/ActivarCuenta', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + jwt.verificacion
+                    
                 },
                 body: JSON.stringify({
                     email: datosCliente.cuenta?.email,
                     codigo: codigo
                 })
             });
-            const data = await _respuesta.json();
+            return await _respuesta.json();
 
-            if (data.codigo === 0) {
-                //alert(' Cuenta verificada correctamente. ¡Ya puedes iniciar sesión!');
-                console.log('Cuenta verificada correctamente')
-            } else {
-                alert('Código incorrecto o expirado.');
-            }
-            return data;
 
         }catch(error){
             console.error('Error al validar el código:', error);
