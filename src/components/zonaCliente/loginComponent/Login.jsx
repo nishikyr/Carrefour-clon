@@ -1,9 +1,32 @@
+import { useState } from 'react';
 import './Login.css'
 import { useNavigate} from 'react-router-dom'
+import useGlobalStore from '../../../globalState/storeGlobal';
+import restClienteSerive from '../../../services/restClienteService'
 
 const Login=()=>{
 
     const navigate=useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [mensajeError, setMensajeError] = useState('')
+    const  {setCodigoVerificacion, setJwt, setDatosCliente}= useGlobalStore()
+
+    async function handleSubmit(ev){
+        ev.preventDefault();
+        const _resp = await restClienteSerive.LoginRegistro('Login', {email, password});
+        if(_resp.codigo === 0){
+            //almaceno en el storage global codigo-verificacion, jwt-verificacion, datosCliente(email)
+            setCodigoVerificacion(_resp.datos.codigo);
+            setJwt({'verificacion': _resp.datos.jwt});
+            setDatosCliente(_resp.datos.datosCliente);
+            
+            //redirijo a componente verificar2FA
+        }else{
+            //mostrar errores en vista
+        }
+
+    }
 
     return (
         <>
@@ -33,11 +56,11 @@ const Login=()=>{
                 <span>Accede o <a href="/Cliente/Registro">crea una cuenta</a> </span>
                 <form>
                     <div className="form-floating mb-3">
-                        <input type="email" className="form-control" id="email" placeholder="Correo electronico *" required/>
+                        <input type="email" className="form-control" id="email" placeholder="Correo electronico *" required onChange={(ev) => setEmail(ev.target.value)}/>
                         <label htmlFor="email">Correo electrónico:</label>
                     </div>
                     <div className="form-floating mb-3">
-                        <input type="password" className="form-control" id="password" placeholder="Contraseña *"required/>
+                        <input type="password" className="form-control" id="password" placeholder="Contraseña *"required onChange={(ev) => setPassword(ev.target.value)}/>
                         <label htmlFor="password">Contraseña:</label>
                     </div>
                     <div className="form-group text-center">

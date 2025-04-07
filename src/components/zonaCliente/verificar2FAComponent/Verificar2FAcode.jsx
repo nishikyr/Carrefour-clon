@@ -5,12 +5,17 @@ import { useNavigate } from 'react-router-dom';
 import useGlobalStore from '../../../globalState/storeGlobal';
 import restClienteService from '../../../services/restClienteService';
 
+// IMPORTAMOS SWEET-ALERT
+import Swal from 'sweetalert2'
+// or via CommonJS
+const Swal = require('sweetalert2')
+
 const Verficar2FAcode=()=>{
 
     const { operacion }=useParams();  //<-------devuelve un objeto con este formato: {nombre_parametro: valor, nombre_parametro:valor, ... } en nuestro caso: { operacion: 'Registro' | 'Login'
 
     // Zustand - estado global
-    const { jwt, datosCliente } = useGlobalStore();
+    const {codigoVerificacion, jwt, datosCliente, setDatosCliente, setJwt } = useGlobalStore();
 
     const navigate = useNavigate();
 
@@ -27,51 +32,83 @@ const Verficar2FAcode=()=>{
     }
     
     //Función para comprobar el código !!!!!!!!!!! al hacer click en el boton
-    async function ValidarCodigo() {
-        console.log('Lo que vale el array del state....', charsCode);
+    // async function ValidarCodigo() {
+    //     console.log('Lo que vale el array del state....', charsCode);
 
-        const codigo = charsCode.join('')
-        console.log(codigo);
+    //     const codigo = charsCode.join('')
+    //     console.log(codigo);
 
-        if(codigo.length < 6 || charsCode.includes('')){
-            alert('Debes completar los 6 digitos');
-            return;
-        }
+    //     if(codigo.length < 6 || charsCode.includes('')){
+    //         alert('Debes completar los 6 digitos');
+    //         return;
+    //     }
 
-        const _respuesta = await restClienteService.ActivarCuenta(datosCliente, jwt, codigo);
+    //     const _respuesta = await restClienteService.ActivarCuenta(datosCliente, jwt, codigo);
 
-        if(_respuesta.codigo === 0){
-            navigate('/Cliente/Login');
+    //     if(_respuesta.codigo === 0){
+    //         navigate('/Cliente/Login');
+    //     }else{
+    //         console.log('NO TE HEMOS REDIRIGIDO MAJETE!!!!!!!')
+    //         return;
+    //     }
+
+    //     // try{
+    //     //     const response = await fetch('http://localhost:3003/api/zonaCliente/ActivarCuenta', {
+    //     //         method: 'POST',
+    //     //         headers: {
+    //     //             'Content-Type': 'application/json',
+    //     //             'Authorization': 'Bearer ' + jwt.verificacion
+    //     //         },
+    //     //         body: JSON.stringify({
+    //     //             email: datosCliente.cuenta?.email,
+    //     //             codigo: codigo
+    //     //         })
+    //     //     });
+    //     //     const data = await response.json();
+
+    //     //     if (data.codigo === 0) {
+    //     //         alert(' Cuenta verificada correctamente. ¡Ya puedes iniciar sesión!');
+    //     //         navigate('/Cliente/Login');
+    //     //     } else {
+    //     //         alert('Código incorrecto o expirado.');
+    //     //     }
+    //     // }catch(error){
+    //     //     console.error('Error al validar el código:', error);
+    //     //     alert('Error de servidor al verificar el código.');
+    //     // }
+    // };
+
+    async function ValidarCodigo(){
+        console.log('Lo que vale el array de caracteres del state...', charsCode);
+        const _codigo=charsCode.join('');
+
+        let _resp= await restClienteService.VerificarCode(operacion, datosCliente.cuenta.email, _codigo, jwt.verificacion);
+
+        if(_resp.codigo === 0){
+            if(operacion === 'Registro'){
+                // si operacion es registro, pues mandar al login ...
+                //se podria usar el SweetAlert aqui, es una libreria
+                Swal.fire({
+                    position: "top-end",
+                    icon: "success",
+                    title: "Tu cuenta se ha activado correctamente",
+                    showConfirmButton: false,
+                    timer: 1500
+                    }
+                );
+                navigate('/Cliente/Login');
+            }
         }else{
-            console.log('NO TE HEMOS REDIRIGIDO MAJETE!!!!!!!')
-            return;
+            //si es login, hay que almacenar tokens de sesion, refresh y datos de cliente en storage-global
+            setDatosCliente(_resp.datos.datosCliente);
+            setJwt(_resp.datos.jwt) // <---------------- ojo que el zustand esta psandole tipo y valor: setJwt('sesion', _resp.datos.jwt.session)
+            setJwt('session', _resp.datos.jwt.session);
+            setJwt('refresh', _resp.datos.jwt.refresh);
+
+            navigate('/')
+            //Mostrar mensajes de error, habra que reenviar codigo ....
         }
-
-        // try{
-        //     const response = await fetch('http://localhost:3003/api/zonaCliente/ActivarCuenta', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //             'Authorization': 'Bearer ' + jwt.verificacion
-        //         },
-        //         body: JSON.stringify({
-        //             email: datosCliente.cuenta?.email,
-        //             codigo: codigo
-        //         })
-        //     });
-        //     const data = await response.json();
-
-        //     if (data.codigo === 0) {
-        //         alert(' Cuenta verificada correctamente. ¡Ya puedes iniciar sesión!');
-        //         navigate('/Cliente/Login');
-        //     } else {
-        //         alert('Código incorrecto o expirado.');
-        //     }
-        // }catch(error){
-        //     console.error('Error al validar el código:', error);
-        //     alert('Error de servidor al verificar el código.');
-        // }
-    };
+    }
 
 
     return (

@@ -53,5 +53,16 @@ export default{
             alert('Error de servidor al verificar el código.');
             return {codigo: 1}; //Devuelve algo aunque sea fallo
         }
+    },
+    VerificarCode: async function(operacion, email, codigo, jwt){
+        try {
+            const _respuesta=await fetch('http://localhost:3003/api/zonaCliente/VerificarCode', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ operacion, email, codigo, jwt})
+            })
+        } catch (error) {
+            
+        }
     }
 }
