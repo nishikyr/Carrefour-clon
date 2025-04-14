@@ -144,6 +144,7 @@ function Registro(){
             
         }else{
             //FALLO AL REGISTRAR AL USUARIO.
+            alert('Fallo en el registro. Intenta nuevamente')
         }
 
         ///#region ------------- YO LO HICE ASI, PERO EL PROFE LO HIZO CON OTRA FORMA ----------------------

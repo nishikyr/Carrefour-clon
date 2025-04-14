@@ -1,6 +1,7 @@
 import autoRefresh from "./autoRefresh";
 
 export default{
+    //#region----------------------------------------------------------
     ComprobarEmail: async function(email){
         try {
             const _respuesta = await fetch('http://localhost:3003/api/zonaCliente/ComprobarEmail', {
@@ -31,38 +32,28 @@ export default{
             return null; //false;
         }
     },
-    ActivarCuenta: async function(datosCliente, jwt, codigo){
-        try{
-            const _respuesta = await autoRefresh.fetchRefreshToken('http://localhost:3003/api/zonaCliente/ActivarCuenta', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + jwt.verificacion
-                    
-                },
-                body: JSON.stringify({
-                    email: datosCliente.cuenta?.email,
-                    codigo: codigo
-                })
-            });
-            return await _respuesta.json();
-
-
-        }catch(error){
-            console.error('Error al validar el código:', error);
-            alert('Error de servidor al verificar el código.');
-            return {codigo: 1}; //Devuelve algo aunque sea fallo
-        }
-    },
     VerificarCode: async function(operacion, email, codigo, jwt){
         try {
             const _respuesta=await fetch('http://localhost:3003/api/zonaCliente/VerificarCode', {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({ operacion, email, codigo, jwt})
-            })
+            });
+            return await _respuesta.json();
         } catch (error) {
-            
+            console.error('Error verificando el código 2FA: ', error);
+            return { codigo: 1, mensaje: 'Error al verificar 2FA'};
+        }
+    },
+    //#endregion........................................................
+    Categorias: async function(pathCat){
+        try {
+            const _respuesta=await fetch(`http://localhost:3003/api/zonaTienda/Categorias?pathCat=${pathCat}`);
+            return await _respuesta.json(); //codigo===0;
+        } catch (error) {
+            console.log('Error al recuperar categorias ...', error);
+            return null;
         }
     }
+
 }

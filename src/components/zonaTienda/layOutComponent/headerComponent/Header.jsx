@@ -1,7 +1,39 @@
+import { useEffect, useState } from 'react';
 import './Header.css';
 import {Link} from 'react-router-dom'
+import useGlobalStore from '../../../../globalState/storeGlobal';
+import restClienteService from '../../../../services/restClienteService';
+import { useLoaderData } from 'react-router-dom';
 
 const Header=()=>{
+    //Carga de categorias principales o raices en la carga del componente ... esto no se hace asi, es ineficaz
+    //const [categorias, setCategorias] = useState([]);
+    const categorias = useLoaderData();
+    //const categorias = loaderCategorias;
+
+
+    //Esto ya no------
+    // useEffect(
+    //     ()=>{
+    //         async function cargarCategorias(){
+    //             const respuesta = await restClienteService.Categorias('raices');
+    //             if(respuesta?.codigo === 0){
+    //                 setCategorias(respuesta.datos);
+    //             }else{
+    //                 console.warn('No se pudieron cargar las categorías');
+    //                 setCategorias([]);
+    //             }
+    //         }
+    //         cargarCategorias();
+    //     },
+    //     []
+    // );
+
+    //Para modificar los datos si el usuario esta logeado o no
+    const { datosCliente, setJwt, setDatosCliente } = useGlobalStore();
+    const estaLogeado = datosCliente?.nombre && datosCliente?.cuenta?.email;
+
+
     return (
         <>
             <nav className="navbar navbar-expand-lg bg-white navbar-light bg-light">
@@ -18,7 +50,15 @@ const Header=()=>{
                                 <Link className="nav-link" to="/Cliente/Panel/MisListas" ><i className="fa-regular fa-heart"></i> Listas y Mis productos</Link>
                             </li>
                             <li className="nav-item">
-                                <Link className="nav-link" to="/Cliente/Login" ><i className="fa-regular fa-user"></i> Mi cuenta</Link>
+                                {estaLogeado ? (
+                                    <button className="nav-link btn border-0 bg-transparent" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCuenta">
+                                        <i className="fa-regular fa-user"></i> Mi cuenta
+                                    </button>
+                                ) : (
+                                    <Link className="nav-link" to="/Cliente/Login">
+                                        <i className="fa-regular fa-user"></i> Mi cuenta
+                                    </Link>
+                                )}
                             </li>
                             <li className="nav-item">
                                 <Link className="nav-link" to="/Tienda/MostrarPedido" ><i className="fa-solid fa-cart-shopping"></i> Cesta</Link>
@@ -59,15 +99,46 @@ const Header=()=>{
                     <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
                 </div>
                 <div className="offcanvas-body">
-                    <ul className="list-group">
-                        <li className="list-group-item"><Link to="#">Electrónica</Link></li>
-                        <li className="list-group-item"><Link to="#">Moda</Link></li>
-                        <li className="list-group-item"><Link to="#">Hogar</Link></li>
-                        <li className="list-group-item"><Link to="#">Deportes</Link></li>
-                        <li className="list-group-item"><Link to="#">Supermercado</Link></li>
-                    </ul>
+                <ul className="list-group">
+                {categorias.map((cat) => (
+                    <li className="list-group-item d-flex align-items-center justify-content-between" key={cat._id.$oid}>
+                    <div className="d-flex align-items-center">
+                        <img src={cat.imagen} alt={cat.nombreCategoria} style={{ width: '40px', height: '40px', objectFit: 'contain', marginRight: '10px' }} />
+                        <Link to={`/Tienda/Categoria/${cat.path}`} className="text-decoration-none text-dark fw-medium">
+                        {cat.nombreCategoria}
+                        </Link>
+                    </div>
+                    <i className="fa-solid fa-chevron-right text-muted"></i>
+                    </li>
+                ))}
+                </ul>
                 </div>
             </div>
+            {estaLogeado && (
+                <div className="offcanvas offcanvas-end" id="offcanvasCuenta">
+                    <div className="offcanvas-header">
+                        <h5 className="offcanvas-title">Hola {datosCliente.nombre}</h5>
+                        <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
+                    </div>
+                    <div className="offcanvas-body">
+                        <ul className="list-group">
+                            <li className="list-group-item"><Link to="/Cliente/MiCuenta">Mi cuenta</Link></li>
+                            <li className="list-group-item"><Link to="/Cliente/Pedidos">Mis pedidos</Link></li>
+                            <li className="list-group-item"><Link to="/Cliente/Cupones">Cupones</Link></li>
+                            <li className="list-group-item"><Link to="/Cliente/Listas">Listas</Link></li>
+                            <li className="list-group-item"><Link to="/Cliente/MisProductos">Mis productos</Link></li>
+                            <li className="list-group-item text-danger" style={{ cursor: 'pointer' }} onClick={() => {
+                                setJwt('session', '');
+                                setJwt('refresh', '');
+                                setDatosCliente({});
+                                window.location.href = '/'; // redirige al inicio
+                            }}>
+                                <i className="fa-solid fa-arrow-right-from-bracket"></i> Cerrar sesión
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            )}
         </>
     )
 }

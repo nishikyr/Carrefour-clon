@@ -18,12 +18,15 @@ const Login=()=>{
         if(_resp.codigo === 0){
             //almaceno en el storage global codigo-verificacion, jwt-verificacion, datosCliente(email)
             setCodigoVerificacion(_resp.datos.codigo);
-            setJwt({'verificacion': _resp.datos.jwt});
+            setJwt('verificacion', _resp.datos.jwt);
             setDatosCliente(_resp.datos.datosCliente);
             
             //redirijo a componente verificar2FA
+            navigate('/Cliente/Verificar/Login');
         }else{
             //mostrar errores en vista
+            setMensajeError(_resp.mensaje || 'Credenciales incorrectas');
+
         }
 
     }
@@ -54,7 +57,7 @@ const Login=()=>{
             <div className="col-md-4">
                 <h2 className="text-center mb-4">Tu cuenta</h2>
                 <span>Accede o <a href="/Cliente/Registro">crea una cuenta</a> </span>
-                <form>
+                <form onSubmit={handleSubmit}>
                     <div className="form-floating mb-3">
                         <input type="email" className="form-control" id="email" placeholder="Correo electronico *" required onChange={(ev) => setEmail(ev.target.value)}/>
                         <label htmlFor="email">Correo electrónico:</label>
@@ -68,6 +71,7 @@ const Login=()=>{
                     </div>
                     <button type="submit" className=" m-3 btn fakeSubmit">Continuar</button>
                 </form>
+                {mensajeError && <div className="alert alert-danger text-center">{mensajeError}</div>}
                 <div className="text-center mt-3">
                     <a href="#">¿Problemas para acceder?</a>
                 </div>

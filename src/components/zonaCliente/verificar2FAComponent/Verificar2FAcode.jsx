@@ -6,9 +6,9 @@ import useGlobalStore from '../../../globalState/storeGlobal';
 import restClienteService from '../../../services/restClienteService';
 
 // IMPORTAMOS SWEET-ALERT
-import Swal from 'sweetalert2'
+import Swal from 'sweetalert2';
 // or via CommonJS
-const Swal = require('sweetalert2')
+//const Swal = require('sweetalert2');
 
 const Verficar2FAcode=()=>{
 
@@ -82,6 +82,10 @@ const Verficar2FAcode=()=>{
         console.log('Lo que vale el array de caracteres del state...', charsCode);
         const _codigo=charsCode.join('');
 
+        if (_codigo.length < 6 || charsCode.includes(undefined)) {
+            return;
+        }
+
         let _resp= await restClienteService.VerificarCode(operacion, datosCliente.cuenta.email, _codigo, jwt.verificacion);
 
         if(_resp.codigo === 0){
@@ -97,8 +101,8 @@ const Verficar2FAcode=()=>{
                     }
                 );
                 navigate('/Cliente/Login');
-            }
-        }else{
+
+            }else{
             //si es login, hay que almacenar tokens de sesion, refresh y datos de cliente en storage-global
             setDatosCliente(_resp.datos.datosCliente);
             setJwt(_resp.datos.jwt) // <---------------- ojo que el zustand esta psandole tipo y valor: setJwt('sesion', _resp.datos.jwt.session)
@@ -107,6 +111,16 @@ const Verficar2FAcode=()=>{
 
             navigate('/')
             //Mostrar mensajes de error, habra que reenviar codigo ....
+            }
+        }else{
+            Swal.fire({
+                position: "top-end",
+                icon: "error",
+                title: "Código incorrecto o expirado",
+                showConfirmButton: false,
+                timer: 1500
+                }
+            );
         }
     }
 
