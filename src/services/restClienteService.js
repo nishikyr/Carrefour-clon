@@ -1,7 +1,7 @@
 import autoRefresh from "./autoRefresh";
 
 export default{
-    //#region----------------------------------------------------------
+    //#region-------------------------------zonaCliente---------------------------
     ComprobarEmail: async function(email){
         try {
             const _respuesta = await fetch('http://localhost:3003/api/zonaCliente/ComprobarEmail', {
@@ -45,7 +45,7 @@ export default{
             return { codigo: 1, mensaje: 'Error al verificar 2FA'};
         }
     },
-    //#endregion........................................................
+    //#endregion------------------------------------------------------------------
     Categorias: async function(pathCat){
         try {
             const _respuesta=await fetch(`http://localhost:3003/api/zonaTienda/Categorias?pathCat=${pathCat}`);

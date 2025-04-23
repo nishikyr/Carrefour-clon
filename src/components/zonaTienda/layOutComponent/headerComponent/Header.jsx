@@ -32,6 +32,23 @@ const Header=()=>{
     //Para modificar los datos si el usuario esta logeado o no
     const { datosCliente, setJwt, setDatosCliente } = useGlobalStore();
     const estaLogeado = datosCliente?.nombre && datosCliente?.cuenta?.email;
+    const [subCategorias, setSubCategorias] = useState([]);
+    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+
+    const cargarSubcategorias = async (pathCategoria, nombreCategoria, imagenCategoria) => {
+        const respuesta = await restClienteService.Categorias(pathCategoria); // usa tu servicio
+        if (respuesta?.codigo === 0) {
+            setSubCategorias(respuesta.datos);
+            setCategoriaSeleccionada({ nombre: nombreCategoria, imagen: imagenCategoria });
+            // Abre el panel
+            const panel = new bootstrap.Offcanvas('#offcanvasSubcategorias');
+            panel.show();
+        } else {
+            setSubCategorias([]);
+            setCategoriaSeleccionada(null);
+        }
+    };
+    
 
 
     return (
@@ -92,7 +109,7 @@ const Header=()=>{
                     </div>
                 </div>
             </nav>
-    
+            {/* ESTAS SON LAS Categorias */}
             <div className="offcanvas offcanvas-start" id="offcanvasMenu">
                 <div className="offcanvas-header">
                     <h5 className="offcanvas-title">Categorías</h5>
@@ -101,17 +118,39 @@ const Header=()=>{
                 <div className="offcanvas-body">
                 <ul className="list-group">
                 {categorias.map((cat) => (
-                    <li className="list-group-item d-flex align-items-center justify-content-between" key={cat._id.$oid}>
-                    <div className="d-flex align-items-center">
-                        <img src={cat.imagen} alt={cat.nombreCategoria} style={{ width: '40px', height: '40px', objectFit: 'contain', marginRight: '10px' }} />
-                        <Link to={`/Tienda/Categoria/${cat.path}`} className="text-decoration-none text-dark fw-medium">
-                        {cat.nombreCategoria}
-                        </Link>
+                <li className="list-group-item d-flex align-items-center justify-content-between" key={cat._id}>
+                    <div className="d-flex align-items-center" style={{ cursor: 'pointer' }} onClick={() => cargarSubcategorias(cat.pathCategoria, cat.nombreCategoria, cat.imagen)}>
+                    <img src={cat.imagen} alt={cat.nombreCategoria} style={{ width: '40px', height: '40px', objectFit: 'contain', marginRight: '10px' }} />
+                    <span className="text-decoration-none text-dark fw-medium">{cat.nombreCategoria}</span>
                     </div>
                     <i className="fa-solid fa-chevron-right text-muted"></i>
-                    </li>
+                </li>
                 ))}
                 </ul>
+                </div>
+            </div>
+            {/* Esto es para las subcategorias  */}
+            <div className="offcanvas offcanvas-start" id="offcanvasSubcategorias" style={{ left: '400px', width: '300px' }}>
+                <div className="offcanvas-header">
+                    <h5 className="offcanvas-title d-flex align-items-center">
+                    {categoriaSeleccionada && (
+                        <>
+                        <img src={categoriaSeleccionada.imagen} alt={categoriaSeleccionada.nombre} style={{ width: '30px', height: '30px', marginRight: '10px' }} />
+                        {categoriaSeleccionada.nombre}
+                        </>
+                    )}
+                    </h5>
+                    <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
+                </div>
+                <div className="offcanvas-body">
+                    <ul className="list-group">
+                    {subCategorias.map((subcat) => (
+                        <li key={subcat._id} className="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{subcat.nombreCategoria}</span>
+                        <i className="fa-solid fa-chevron-right text-muted"></i>
+                        </li>
+                    ))}
+                    </ul>
                 </div>
             </div>
             {estaLogeado && (

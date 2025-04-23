@@ -14,8 +14,8 @@ const useGlobalStore=create(
             //setCodigoVerificacion: codigo => set( state => state.codigoVerificacion=codigo)
             //Tienes que sustituir el objeto state por una copia con el valor de la propiedad modificada
             setCodigoVerificacion: codigo => set( state => ({...state, codigoVerificacion: codigo } ) ),
-            setJwt: (tipo, valorjwt) => set (state => ({...state, jwt: { ...state.jwt, [tipo]: valorjwt } } ) ),
-            setDatosCliente: newdatosCliente => (set (state => ({...state, datosCliente: {...state.datosCliente, ...newdatosCliente } } ) ) )
+            setJwt: (tipo, valorjwt) => set (state => ({...state, jwt: { ...state.jwt, [tipo]: valorjwt } } ) ), //se le pone ese corchete porque ese será el parametro que yo le voy a pasar. Para que lo entiendas esta en el Registro.jsx
+            setDatosCliente: newdatosCliente => (set (state => ({...state, datosCliente: {...state.datosCliente, ...newdatosCliente } } ) ) ) //Esto lo que me hace es actualizarle y/o añadir las propiedas en caso no los tenga. Por eso es que lo paso con ...newdatosCliente, para que no me borre las propiedas en caso que no tenga lo anterior
         }
     }
 );

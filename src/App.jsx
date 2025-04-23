@@ -24,9 +24,13 @@ const routerObject = createBrowserRouter(
       element: <Layout />,
       loader:  loaderCategorias,
         children:[
-          { path:'/', 
-            element: <Home/> 
-          },
+          { path:'/', element: <Home/> },
+          // { path: '/Tienda', 
+          //   children: 
+          //   [
+          //     {path: 'Productos/:pathCat', element }
+          //   ]
+          // }
         ]
     },
     {
