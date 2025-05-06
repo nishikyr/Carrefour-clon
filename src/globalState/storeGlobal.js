@@ -10,6 +10,10 @@ const useGlobalStore=create(
             codigoVerificacion: '',
             jwt: { session: '', refresh: '', verificacion: ''},
             datosCliente: { },
+            pedido: {
+                itemsPedido: [],
+                subtotal: 0
+            },
             //funciones modificacion de props. objeto STATE GLOBAL, NO PUEDEN MUTARLO!!!! ESTO NO VALDRIA:
             //setCodigoVerificacion: codigo => set( state => state.codigoVerificacion=codigo)
             //Tienes que sustituir el objeto state por una copia con el valor de la propiedad modificada

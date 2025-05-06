@@ -7,6 +7,7 @@ import Verficar2FAcode from './components/zonaCliente/verificar2FAComponent/Veri
 import Layout from './components/zonaTienda/layOutComponent/Layout'
 import Home from './components/zonaTienda/homeComponent/Home'
 import restClienteService from './services/restClienteService'
+import Productos from './components/zonaTienda/productosComponent/Productos'
 
 //Propiedades de este objetos: path:  <------ url que chequea el modulo de enrutamiento con la url navegador
 //                            element: <----- componente a cargar si se encuentra la url en path:
@@ -25,12 +26,12 @@ const routerObject = createBrowserRouter(
       loader:  loaderCategorias,
         children:[
           { path:'/', element: <Home/> },
-          // { path: '/Tienda', 
-          //   children: 
-          //   [
-          //     {path: 'Productos/:pathCat', element }
-          //   ]
-          // }
+          { path: '/Tienda', 
+            children: 
+            [
+              {path: 'Productos/:pathCat', element: <Productos></Productos> }
+            ]
+          }
         ]
     },
     {

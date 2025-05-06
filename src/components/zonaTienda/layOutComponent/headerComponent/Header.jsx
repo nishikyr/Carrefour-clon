@@ -1,55 +1,58 @@
-import { useEffect, useState } from 'react';
 import './Header.css';
-import {Link} from 'react-router-dom'
-import useGlobalStore from '../../../../globalState/storeGlobal';
+import { useEffect, useState, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import restClienteService from '../../../../services/restClienteService';
-import { useLoaderData } from 'react-router-dom';
 
 const Header=()=>{
-    //Carga de categorias principales o raices en la carga del componente ... esto no se hace asi, es ineficaz
-    //const [categorias, setCategorias] = useState([]);
-    const categorias = useLoaderData();
-    //const categorias = loaderCategorias;
+    //carga de categorias principales o raices en la carga del componente...esto no se hace asi, es ineficaz sino se usa junto
+    //con useMemo para almacenar en cache valores pedidos previamente...
+    //mejor con hacerlo con funcion loader en objeto Route o con nuevo hook 
+    const navigate=useNavigate();
 
+    const [categorias, setCategorias]=useState([]);
 
-    //Esto ya no------
-    // useEffect(
-    //     ()=>{
-    //         async function cargarCategorias(){
-    //             const respuesta = await restClienteService.Categorias('raices');
-    //             if(respuesta?.codigo === 0){
-    //                 setCategorias(respuesta.datos);
-    //             }else{
-    //                 console.warn('No se pudieron cargar las categorías');
-    //                 setCategorias([]);
-    //             }
-    //         }
-    //         cargarCategorias();
-    //     },
-    //     []
-    // );
+    const [catPpal, setCatPpal]=useState(null);
+    const [ breadCrump, setBreadCrump]=useState( [{nombreCategoria:'Carrefour.es', pathCategoria:'raices', imagen:''}] )
 
-    //Para modificar los datos si el usuario esta logeado o no
-    const { datosCliente, setJwt, setDatosCliente } = useGlobalStore();
-    const estaLogeado = datosCliente?.nombre && datosCliente?.cuenta?.email;
-    const [subCategorias, setSubCategorias] = useState([]);
-    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+    const btnCerrar=useRef(null);
 
-    const cargarSubcategorias = async (pathCategoria, nombreCategoria, imagenCategoria) => {
-        const respuesta = await restClienteService.Categorias(pathCategoria); // usa tu servicio
-        if (respuesta?.codigo === 0) {
-            setSubCategorias(respuesta.datos);
-            setCategoriaSeleccionada({ nombre: nombreCategoria, imagen: imagenCategoria });
-            // Abre el panel
-            const panel = new bootstrap.Offcanvas('#offcanvasSubcategorias');
-            panel.show();
-        } else {
-            setSubCategorias([]);
-            setCategoriaSeleccionada(null);
-        }
-    };
+    useEffect(
+        ()=>{
+            console.log('lanzando efecto para recuperar categorias raices')
+            restClienteService.Categorias('raices')
+                            .then( cats => setCategorias(cats))
+                            .catch( err => { console.log(err); setCategorias([]); })
+        }, 
+        []
+    )
+
+    //-------- funcion handler-event click sobre cats, para recuperar subcats o productos si es final ------------
+    async function RecuperarSubcats(cat) {
+        if (!cat || !cat.pathCategoria) return;
     
-
+        // si es final
+        if (/^.*-\$$/.test(cat.pathCategoria)) {
+            setCatPpal(null);
+            setCategorias(categorias);
+            btnCerrar.current?.click();
+            navigate(`/Tienda/Productos/${cat.pathCategoria}`);
+            return;
+        }
+    
+        try {
+            const _subcats = await restClienteService.Categorias(cat.pathCategoria);
+            setCatPpal(cat.nombreCategoria !== 'Carrefour.es' ? cat : null);
+            setCategorias(Array.isArray(_subcats) ? _subcats : []);
+            setBreadCrump(prev => {
+                if (!Array.isArray(prev)) return [{ nombreCategoria: 'Carrefour.es', pathCategoria: 'raices', imagen: '' }];
+                const _pos = prev.findIndex(el => el.pathCategoria === cat.pathCategoria);
+                return _pos === -1 ? [...prev, cat] : prev.slice(0, _pos + 1);
+            });
+        } catch (err) {
+            console.error("Error recuperando subcategorías", err);
+        }
+    }
+    
 
     return (
         <>
@@ -67,15 +70,7 @@ const Header=()=>{
                                 <Link className="nav-link" to="/Cliente/Panel/MisListas" ><i className="fa-regular fa-heart"></i> Listas y Mis productos</Link>
                             </li>
                             <li className="nav-item">
-                                {estaLogeado ? (
-                                    <button className="nav-link btn border-0 bg-transparent" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCuenta">
-                                        <i className="fa-regular fa-user"></i> Mi cuenta
-                                    </button>
-                                ) : (
-                                    <Link className="nav-link" to="/Cliente/Login">
-                                        <i className="fa-regular fa-user"></i> Mi cuenta
-                                    </Link>
-                                )}
+                                <Link className="nav-link" to="/Cliente/Login" ><i className="fa-regular fa-user"></i> Mi cuenta</Link>
                             </li>
                             <li className="nav-item">
                                 <Link className="nav-link" to="/Tienda/MostrarPedido" ><i className="fa-solid fa-cart-shopping"></i> Cesta</Link>
@@ -109,75 +104,41 @@ const Header=()=>{
                     </div>
                 </div>
             </nav>
-            {/* ESTAS SON LAS Categorias */}
+    
             <div className="offcanvas offcanvas-start" id="offcanvasMenu">
                 <div className="offcanvas-header">
                     <h5 className="offcanvas-title">Categorías</h5>
-                    <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
+                    <button id="btnCerrar" ref={btnCerrar} type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
                 </div>
                 <div className="offcanvas-body">
-                <ul className="list-group">
-                {categorias.map((cat) => (
-                <li className="list-group-item d-flex align-items-center justify-content-between" key={cat._id}>
-                    <div className="d-flex align-items-center" style={{ cursor: 'pointer' }} onClick={() => cargarSubcategorias(cat.pathCategoria, cat.nombreCategoria, cat.imagen)}>
-                    <img src={cat.imagen} alt={cat.nombreCategoria} style={{ width: '40px', height: '40px', objectFit: 'contain', marginRight: '10px' }} />
-                    <span className="text-decoration-none text-dark fw-medium">{cat.nombreCategoria}</span>
-                    </div>
-                    <i className="fa-solid fa-chevron-right text-muted"></i>
-                </li>
-                ))}
-                </ul>
-                </div>
-            </div>
-            {/* Esto es para las subcategorias  */}
-            <div className="offcanvas offcanvas-start" id="offcanvasSubcategorias" style={{ left: '400px', width: '300px' }}>
-                <div className="offcanvas-header">
-                    <h5 className="offcanvas-title d-flex align-items-center">
-                    {categoriaSeleccionada && (
-                        <>
-                        <img src={categoriaSeleccionada.imagen} alt={categoriaSeleccionada.nombre} style={{ width: '30px', height: '30px', marginRight: '10px' }} />
-                        {categoriaSeleccionada.nombre}
-                        </>
-                    )}
-                    </h5>
-                    <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
-                </div>
-                <div className="offcanvas-body">
-                    <ul className="list-group">
-                    {subCategorias.map((subcat) => (
-                        <li key={subcat._id} className="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{subcat.nombreCategoria}</span>
-                        <i className="fa-solid fa-chevron-right text-muted"></i>
-                        </li>
-                    ))}
-                    </ul>
-                </div>
-            </div>
-            {estaLogeado && (
-                <div className="offcanvas offcanvas-end" id="offcanvasCuenta">
-                    <div className="offcanvas-header">
-                        <h5 className="offcanvas-title">Hola {datosCliente.nombre}</h5>
-                        <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
-                    </div>
-                    <div className="offcanvas-body">
-                        <ul className="list-group">
-                            <li className="list-group-item"><Link to="/Cliente/MiCuenta">Mi cuenta</Link></li>
-                            <li className="list-group-item"><Link to="/Cliente/Pedidos">Mis pedidos</Link></li>
-                            <li className="list-group-item"><Link to="/Cliente/Cupones">Cupones</Link></li>
-                            <li className="list-group-item"><Link to="/Cliente/Listas">Listas</Link></li>
-                            <li className="list-group-item"><Link to="/Cliente/MisProductos">Mis productos</Link></li>
-                            <li className="list-group-item text-danger" style={{ cursor: 'pointer' }} onClick={() => {
-                                setJwt('session', '');
-                                setJwt('refresh', '');
-                                setDatosCliente({});
-                                window.location.href = '/'; // redirige al inicio
-                            }}>
-                                <i className="fa-solid fa-arrow-right-from-bracket"></i> Cerrar sesión
+                    {/* ------------------------------------ barra de navegacion: breadCrumb --------------------------- */}
+                    <nav aria-label="breadcrumb">
+                        <ol className="breadcrumb">
+                        {
+                            Array.isArray(breadCrump) && breadCrump.map((el, pos) => (
+                            <li key={pos} className={`breadcrumb-item ${ pos !== breadCrump.length - 1 ? 'active' : '' }`}>
+                                <a onClick={() => RecuperarSubcats(el)}>{el.nombreCategoria}{' > '}</a>
                             </li>
-                        </ul>
+                            ))
+                        }
+                        </ol>
+                    </nav>                
+                    {/* ------------------------------------ lista de categorias --------------------------------------- */}
+                    <div className="list-group">
+                        {
+                            categorias.length !== 0 && 
+                                categorias.map(
+                                    (el,pos)=>(
+                                            <a className='list-group-item list-group-item-action' key={pos} onClick={(ev)=> RecuperarSubcats(el)}>
+                                                <img src={el.imagen} style={{"height":"42px", "width":"42px"}}/>
+                                                {el.nombreCategoria}
+                                            </a>
+                                        )
+                            )
+                        }
                     </div>
                 </div>
-            )}
+            </div>
         </>
     )
 }

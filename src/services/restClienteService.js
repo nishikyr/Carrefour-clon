@@ -49,11 +49,29 @@ export default{
     Categorias: async function(pathCat){
         try {
             const _respuesta=await fetch(`http://localhost:3003/api/zonaTienda/Categorias?pathCat=${pathCat}`);
-            return await _respuesta.json(); //codigo===0;
+            let _resp = await _respuesta.json();
+            if(_resp.codigo !== 0){
+                throw new Error (_resp.mensaje);
+            }
+            return _resp.datos;
+            
         } catch (error) {
             console.log('Error al recuperar categorias ...', error);
             return null;
         }
-    }
+    },
+    Productos: async function(pathCat){
+        try {
+            const _respuesta=await fetch(`http://localhost:3003/api/zonaTienda/Productos?pathCat=${pathCat}`);
+            let _resp = await _respuesta.json();
+            if(_resp.codigo !== 0){
+                throw new Error (_resp.mensaje);
+            }
+            return _resp.datos;
+        } catch (error) {
+            console.log('Error al recuperar productos ...', error);
+            return null;
+        }
+    },
 
 }
