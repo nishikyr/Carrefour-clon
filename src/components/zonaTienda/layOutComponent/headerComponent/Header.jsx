@@ -2,6 +2,7 @@ import './Header.css';
 import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import restClienteService from '../../../../services/restClienteService';
+import useGlobalStore from '../../../../globalState/storeGlobal';
 
 const Header=()=>{
     //carga de categorias principales o raices en la carga del componente...esto no se hace asi, es ineficaz sino se usa junto
@@ -10,6 +11,8 @@ const Header=()=>{
     const navigate=useNavigate();
 
     const [categorias, setCategorias]=useState([]);
+    const { datosCliente, setJwt, setDatosCliente } = useGlobalStore();
+    const estaLogeado = datosCliente?.nombre && datosCliente?.cuenta?.email;
 
     const [catPpal, setCatPpal]=useState(null);
     const [ breadCrump, setBreadCrump]=useState( [{nombreCategoria:'Carrefour.es', pathCategoria:'raices', imagen:''}] )
@@ -70,10 +73,18 @@ const Header=()=>{
                                 <Link className="nav-link" to="/Cliente/Panel/MisListas" ><i className="fa-regular fa-heart"></i> Listas y Mis productos</Link>
                             </li>
                             <li className="nav-item">
-                                <Link className="nav-link" to="/Cliente/Login" ><i className="fa-regular fa-user"></i> Mi cuenta</Link>
+                                {estaLogeado ? (
+                                        <button className="nav-link btn border-0 bg-transparent" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCuenta">
+                                            <i className="fa-regular fa-user"></i> Mi cuenta
+                                        </button>
+                                    ) : (
+                                        <Link className="nav-link" to="/Cliente/Login">
+                                            <i className="fa-regular fa-user"></i> Mi cuenta
+                                        </Link>
+                                )}
                             </li>
                             <li className="nav-item">
-                                <Link className="nav-link" to="/Tienda/MostrarPedido" ><i className="fa-solid fa-cart-shopping"></i> Cesta</Link>
+                                <Link className="nav-link" to="/Pedido" ><i className="fa-solid fa-cart-shopping"></i> Cesta</Link>
                             </li>
                         </ul>
                     </div>
@@ -139,6 +150,31 @@ const Header=()=>{
                     </div>
                 </div>
             </div>
+            {estaLogeado && (
+                <div className="offcanvas offcanvas-end" id="offcanvasCuenta">
+                    <div className="offcanvas-header">
+                        <h5 className="offcanvas-title">Hola {datosCliente.nombre}</h5>
+                        <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
+                    </div>
+                    <div className="offcanvas-body">
+                        <ul className="list-group">
+                            <li className="list-group-item"><Link to="/Cliente/MiCuenta">Mi cuenta</Link></li>
+                            <li className="list-group-item"><Link to="/Cliente/Pedidos">Mis pedidos</Link></li>
+                            <li className="list-group-item"><Link to="/Cliente/Cupones">Cupones</Link></li>
+                            <li className="list-group-item"><Link to="/Cliente/Listas">Listas</Link></li>
+                            <li className="list-group-item"><Link to="/Cliente/MisProductos">Mis productos</Link></li>
+                            <li className="list-group-item text-danger" style={{ cursor: 'pointer' }} onClick={() => {
+                                setJwt('session', '');
+                                setJwt('refresh', '');
+                                setDatosCliente({});
+                                window.location.href = '/'; // redirige al inicio
+                            }}>
+                                <i className="fa-solid fa-arrow-right-from-bracket"></i> Cerrar sesión
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            )}
         </>
     )
 }

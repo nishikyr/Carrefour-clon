@@ -1,0 +1,32 @@
+.nombresStage {
+    font-size: 1.06666667rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 16px;
+    text-align: center;
+    color: #929292;
+    cursor: pointer;
+}
+
+.line {
+    box-sizing: border-box;
+    border-top: 2px solid #d5e1e9;
+    width: 10%;
+
+}
+
+.backnumbers {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    background-color: #929292;
+    color: #fff;
+    border-radius: 50%;
+    text-align: center;
+    height: 20px;
+    font-size: .93333333rem;
+    width: 20px;
+    cursor: pointer;
+}
+

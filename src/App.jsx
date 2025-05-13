@@ -8,6 +8,7 @@ import Layout from './components/zonaTienda/layOutComponent/Layout'
 import Home from './components/zonaTienda/homeComponent/Home'
 import restClienteService from './services/restClienteService'
 import Productos from './components/zonaTienda/productosComponent/Productos'
+import Pedido from './components/zonaTienda/pedidoComponent/Pedido'
 
 //Propiedades de este objetos: path:  <------ url que chequea el modulo de enrutamiento con la url navegador
 //                            element: <----- componente a cargar si se encuentra la url en path:
@@ -21,6 +22,7 @@ const loaderCategorias = async () => {
 
 const routerObject = createBrowserRouter(
   [
+    { path: '/Pedido', element: <Pedido />},
     {
       element: <Layout />,
       loader:  loaderCategorias,
